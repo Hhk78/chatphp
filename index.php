@@ -20,7 +20,6 @@ if ( isset($_POST["content"]) and isset($_POST["name"]) ) {
 
 	ftruncate($buffer, 0);
 	rewind($buffer);
-	// fwrite($buffer, json_encode($messages));
 	fwrite($buffer, json_encode($messages, JSON_UNESCAPED_UNICODE));
 	flock($buffer, LOCK_UN);
 	fclose($buffer);
@@ -35,7 +34,38 @@ if ( isset($_POST["content"]) and isset($_POST["name"]) ) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Simple Chat</title>
+
+<!-- Sağ üst köşe ses ayarı -->
+<div style="position: fixed; top: 10px; right: 10px; z-index: 1000; display: flex; align-items: center; gap: 0.5em;">
+	<input type="checkbox" id="soundToggle" checked>
+	<h3><label for="soundToggle">Mesaj geldikçe ses çalsın</label></h3>
+</div>
+
 <script type="module">
+	function setCookie(name, value, days) {
+		const expires = new Date(Date.now() + days * 864e5).toUTCString();
+		document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=/';
+	}
+
+	function getCookie(name) {
+		return document.cookie.split('; ').reduce((r, v) => {
+			const parts = v.split('=');
+			return parts[0] === name ? decodeURIComponent(parts[1]) : r
+		}, '');
+	}
+
+	const soundToggle = document.getElementById("soundToggle");
+
+	// Sayfa yüklenince cookie'den okuma
+	const soundPref = getCookie("enableNotifSound");
+	if (soundPref === "false") soundToggle.checked = false;
+	else if (soundPref === "true") soundToggle.checked = true;
+
+	// Değişiklik olunca cookie'ye yazma
+	soundToggle.addEventListener("change", () => {
+		setCookie("enableNotifSound", soundToggle.checked, 365);
+	});
+
 	document.querySelector("ul#messages > li").remove()
 
 	document.querySelector("form").addEventListener("submit", async event => {
@@ -83,8 +113,10 @@ if ( isset($_POST["content"]) and isset($_POST["name"]) ) {
 				messageList.append(messageElement)
 				messageList.dataset.lastMessageId = msg.id
 
-				const audio = new Audio("/chatphp/notif.mp3")
-				audio.play()
+				if (document.getElementById("soundToggle").checked) {
+					const audio = new Audio("/chatphp/notif.mp3");
+					audio.play();
+				}
 			}
 		}
 
@@ -170,7 +202,7 @@ if ( isset($_POST["content"]) and isset($_POST["name"]) ) {
 	}
 </style>
 
-<h1>Simple Chat</h1>
+<h1>Karşı atak Mesajlaşma Hizmeti</h1>
 
 <ul id="messages" data-last-message-id="-1">
 	<li>loading…</li>
@@ -197,8 +229,7 @@ if ( isset($_POST["content"]) and isset($_POST["name"]) ) {
 
 	const emojiList = "😀😁😂🤣😃😄😅😆😉😊😋😎😍😘😗😙😚🙂🤗🤩🤔🤨😐😑😶🙄😏😣😥😮🤐😯😪😫🥱😴😌😛😜😝🤤😒😓😔😕🙃🤑😲☹️🙁😖😞😟😤😢😭😦😧😨😩🤯😬😰😱🥵🥶😳🤪😵😡😠🤬😷🤒🤕🤢🤮🥴😇🤠🥳🥸😈👿👹👺💀👻👽🤖🎃😺😸😹😻😼😽🙀😿😾🐶🐱🐭🐹🐰🦊🐻🐼🐨🐯🦁🐮🐷🐽🐸🐵🙈🙉🙊🐒🦄🐔🐧🐦🐤🐣🐥🦆🦅🦉🦇🐺🐗🐴🦓🦍🦧🦣🐘🦛🦏🐪🐫🦒🦘🦬🐃🐂🐄🐎🐖🐏🐑🐐🦌🐕🐩🦮🐕‍🦺🐈🐈‍⬛🪶🐓🦃🦤🦚🦜🦢🦩🐇🦝🦨🦡🦫🦦🦥🐁🐀🐿️🦔🐉🐲";
 
-	// emojiList.split('').forEach(emoji => {
-		Array.from(emojiList).forEach(emoji => {
+	Array.from(emojiList).forEach(emoji => {
 		const span = document.createElement("span");
 		span.textContent = emoji;
 		span.addEventListener("click", () => {
